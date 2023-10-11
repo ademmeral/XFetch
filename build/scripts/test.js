@@ -13,7 +13,7 @@ const btns = [...document.querySelectorAll('button')];
 btns[0].addEventListener('click', async () => {
     try {
         const resp = await Paxios.get('/todos/1');
-        const data = await resp.json();
+        const data = await resp?.json();
         console.log(data);
     }
     catch (err) {

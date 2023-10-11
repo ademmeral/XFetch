@@ -1,140 +1,129 @@
+// paxios.ts
 
-export type PaxiosProps = {
-  [key: string]: any;
-};
-export type PaxiosCallback = (config: PaxiosProps) => void
-interface IPaxiosInterceptor {
-  request: {
-    use: (fn: PaxiosCallback) => void,
-    eject: (fn: PaxiosCallback) => void
-  },
-  response: {
-    use: (config: PaxiosCallback) => void,
-    eject: (fn: PaxiosCallback) => void
+class PaxiosError extends Error {
+  public date: Date;
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'PaxiosError';
+    this.message = message;
+    this.date = new Date();
   }
 }
-export type PaxiosInterceptors = {
-  request: Set<PaxiosCallback>,
-  response: Set<PaxiosCallback>,
-}
 
-class Paxios {
-  private config: PaxiosProps;
+class Paxios  {
+  private config: PaxiosConfig;
   private baseUrl: string;
   private controller: AbortController;
   private interceptors: PaxiosInterceptors;
-  interceptor: IPaxiosInterceptor;
-  // constructor
-  constructor(config: Record<string, any>) {
-    this.baseUrl = config.baseUrl;  // base_url
-    this.controller = new AbortController() // controller
-    this.config = { // config
+  interceptor: PaxiosInterceptorInit;
+
+  constructor(config: PaxiosConfig) {
+    this.baseUrl = config.baseUrl;
+    this.controller = new AbortController();
+    this.config = {
       signal: this.controller.signal,
       ...config,
-      headers: { ...config.headers }
     };
-    // interceptors
+
     this.interceptors = {
       request: new Set(),
-      response: new Set()
+      response: new Set(),
     };
+
     // Setting interceptors
     this.interceptor = {
       request: {
         use: (callback: PaxiosCallback) => {
-          this.interceptors.request.add(callback)
+          this.interceptors.request.add(callback);
         },
-        eject: (fn: PaxiosCallback) => {
-          this.interceptors.request.delete(fn)
-        }
+        eject: (callback: PaxiosCallback) => {
+          this.interceptors.request.delete(callback);
+        },
       },
       response: {
         use: (callback: PaxiosCallback) => {
-          this.interceptors.request.add(callback)
+          this.interceptors.response.add(callback);
         },
         eject: (callback: PaxiosCallback) => {
-          this.interceptors.request.delete(callback)
-        }
-      }
-    }
-  }
-  // new instance
-  static create = (config: Record<string, any> = {}) => new Paxios(config);
-
-  // cancellation
-  cancel() {
-    this.controller.abort()
-    this.config = {
-      ...this.config,
-      signal: this.controller.signal
-    }
-  }
-  // resumption
-  resume() {
-    this.controller = new AbortController()
-    this.config = {
-      ...this.config,
-      signal: this.controller.signal
-    }
+          this.interceptors.response.delete(callback);
+        },
+      },
+    };
   }
 
-  private async apply(config: PaxiosProps) {
-    for (const fn of this.interceptors.request) { fn(config) };
-    return config
+  static create = (config: PaxiosConfig): Paxios => new Paxios(config);
+
+  cancel():void {
+    this.controller.abort();
+    this.config = {
+      ...this.config,
+      signal: this.controller.signal,
+    };
   }
-  // request
-  private async request(config: PaxiosProps) {
-    await this.apply(config);
-    const resp = await fetch(config.url, config);
-    if (resp.ok) return resp;
-    throw new Error('An error has occured while fetching. Plase try again!');
+
+  resume():void {
+    this.controller = new AbortController();
+    this.config = {
+      ...this.config,
+      signal: this.controller.signal,
+    };
   }
-  // methods
-  async get(path: string, conf?: Record<string, any>) {
-    return await this.request({
+
+  private async apply(config: PaxiosConfig): Promise<PaxiosConfig> {
+    for (const fn of this.interceptors.request) {
+      fn(config);
+    }
+    return config;
+  }
+
+  private async request(config: PaxiosConfig): Promise<Response> {
+    try {
+      await this.apply(config);
+      return await fetch(config.url, config);
+    } catch (err) {
+      if (err instanceof Error) throw new PaxiosError(err.message);
+      throw new PaxiosError('An error occurred during the request');
+    }
+  }
+
+  async get(path: string, conf?: PaxiosConfig): Promise<Response> {
+    return this.request({
       ...this.config,
       ...conf,
       method: 'GET',
-      url: this.baseUrl + path
-    })
+      url: this.baseUrl + path,
+    });
   }
-  async post(path: string, conf: Record<string, any>) {
 
-    return await this.request({
+  async post(path: string, conf: PaxiosConfig): Promise<Response> {
+    return this.request({
       ...this.config,
       ...conf,
-      headers : {
-        'Content-Type' : 'application/json',
-        ...conf.headers
-      },
       method: 'POST',
       url: this.baseUrl + path,
-      body: JSON.stringify({ ...conf.body })
-    })
+      body: JSON.stringify(conf.body),
+    });
   }
-  async put(path: string, conf: Record<string, any>) {
 
-    return await this.request({
+  async put(path: string, conf: PaxiosConfig): Promise<Response> {
+    return this.request({
       ...this.config,
       ...conf,
-      headers : {
-        'Content-Type' : 'application/json',
-        ...conf.headers
-      },
       method: 'PUT',
       url: this.baseUrl + path,
-      body: JSON.stringify({ ...conf.body })
-    })
+      body: JSON.stringify(conf.body),
+    });
   }
-  async delete(path: string, conf: PaxiosProps) {
 
-    return await this.request({
+  async delete(path: string, conf: PaxiosConfig): Promise<Response> {
+    return this.request({
       ...this.config,
       ...conf,
       method: 'DELETE',
-      url: this.baseUrl + path
-    })
+      url: this.baseUrl + path,
+    });
   }
 }
 
-export default Paxios
+export default Paxios;

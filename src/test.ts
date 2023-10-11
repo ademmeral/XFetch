@@ -1,5 +1,5 @@
 import Paxios from './api';
-
+// DONT FORGET TO ADD .JS EXTENSION TO THE END OF THE JAVASCRIPT FILES IN BUILD/SCRIPTS DIRECTORY
 const intercept = async (conf?:Record<string, any>) => {
   try {
     const resp = await fetch('https://jsonplaceholder.typicode.com/users/3')
@@ -14,7 +14,7 @@ const btns = [...document.querySelectorAll('button')] as HTMLButtonElement[]
 btns[0].addEventListener('click', async () => {
   try{
     const resp = await Paxios.get('/todos/1')
-    const data = await resp.json();
+    const data = await resp?.json();
     console.log(data)
   } catch (err) {
     console.log(err)
