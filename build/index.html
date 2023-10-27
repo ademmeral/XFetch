@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,25 +13,28 @@
   <title>Paxios Client</title>
 
 </head>
+
 <body>
-  <article class="warn">
-    <header>
-      <h2>Caution</h2>
-      <i class="fa-solid fa-warning fa-xl"></i>
-    </header>
-    <ul>
-      <li>
-        Do not use interceptos nakedly. Use in either an event listener or any other function that fetches data when you do something.
-      </li>
-      <li>
-        Do not use the same instance in an interceptor. Either create a new instance or do something else instead of fetching another data via Paxios. Otherwise, <b>It'll go into an infinite loop!</b>
-      </li>
-      <li>
-        You can use built-in fetch method or you own custom XMLHttpRequest.
-      </li>
-    </ul>
-  </article>
   <div class="container">
+    <article class="warn">
+      <header>
+        <h2>Caution</h2>
+        <i class="fa-solid fa-warning fa-xl"></i>
+      </header>
+      <ul>
+        <li>
+          Do not use interceptos nakedly. Use in either an event listener or any other function that fetches data when
+          you do something.
+        </li>
+        <li>
+          Do not use the same instance in an interceptor. Either create a new instance or do something else instead of
+          fetching another data via Paxios. Otherwise, <b>It'll go into an infinite loop!</b>
+        </li>
+        <li>
+          You can use built-in fetch method or you own custom XMLHttpRequest.
+        </li>
+      </ul>
+    </article>
     <div class="btns">
       <button>Fetch</button>
       <button>Eject Interceptor</button>
@@ -38,4 +42,5 @@
     </div>
   </div>
 </body>
+
 </html>

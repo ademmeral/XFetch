@@ -1,5 +1,5 @@
 type PaxiosInterceptor = (callback: PaxiosCallback) => void;
-type PaxiosCallback = (config: PaxiosConfig) => unknown | void;
+type PaxiosCallback = (config: PaxiosConfig) => PaxiosConfig;
 
 interface PaxiosInterceptorInit {
   request: {

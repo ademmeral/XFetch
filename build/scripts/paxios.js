@@ -62,20 +62,24 @@ class Paxios {
     }
     async apply(config) {
         for (const fn of this.interceptors.request) {
-            fn(config);
+            config = fn(config);
         }
         return config;
     }
     async request(config) {
-        try {
-            await this.apply(config);
-            return await fetch(config.url, config);
-        }
-        catch (err) {
-            if (err instanceof Error)
-                throw new PaxiosError(err.message);
-            throw new PaxiosError('An error occurred during the request');
-        }
+        const newConfig = await this.apply(config);
+        if (this.interceptors.request.size > 0 && !newConfig)
+            throw new PaxiosError('You must return config!');
+        this.config = {
+            ...this.config,
+            ...newConfig,
+            headers: { ...this.config.headers, ...newConfig.headers },
+        };
+        console.log(this.config);
+        const resp = await fetch(config.url, config);
+        if (!resp.ok)
+            throw new PaxiosError('An error has occured while fetching data.');
+        return resp;
     }
     async get(path, conf) {
         return this.request({
