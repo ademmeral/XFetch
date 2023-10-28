@@ -1,5 +1,5 @@
 type PaxiosInterceptor = (callback: PaxiosCallback) => void;
-type PaxiosCallback = (config: PaxiosConfig) => Promise<PaxiosConfig>|PaxiosConfig;
+type PaxiosCallback = (config: PaxiosConfig) => Promise<PaxiosConfig> | PaxiosConfig;
 
 interface PaxiosInterceptorInit {
   request: {
@@ -14,14 +14,14 @@ interface PaxiosInterceptorInit {
 
 type PaxiosConfig = RequestInit<RequestInit<BodyInit>>;
 type PaxiosResponse = Response<ResponseInit>
-type PaxiosRequest = Request<RequestInit>
+type PaxiosRequest = Request<ResponseInit>
 
 interface IPaxiosProps {
   public initialConfig: PaxiosConfig;
-  public headers : Headers,
-  public request? : Request, 
-  private baseUrl: string,
-  private controller: AbortController,
+  public headers: Headers,
+  public request?: Request,
+  public baseUrl: string,
+  public controller: AbortController,
   private interceptors: PaxiosInterceptors,
   interceptor: PaxiosInterceptorInit,
 }

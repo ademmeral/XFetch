@@ -11,11 +11,11 @@ class PaxiosError extends Error {
   }
 }
 
-class Paxios  {
+class Paxios {
   public initialConfig: PaxiosConfig;
   public headers: Headers;
-  private baseUrl: string;
-  private controller: AbortController;
+  public controller: AbortController;
+  public baseUrl: string;
   private interceptors: PaxiosInterceptors;
   interceptor: PaxiosInterceptorInit;
 
@@ -25,8 +25,8 @@ class Paxios  {
     this.initialConfig = Object.defineProperty(
       {},
       'signal', {
-        value: this.controller.signal
-      }
+      value: this.controller.signal
+    }
     );
     this.headers = new Headers(config.headers);
     this.interceptors = {
@@ -69,9 +69,9 @@ class Paxios  {
       };
   }
 
-  get config(){
+  get config() {
     return new Proxy(this.initialConfig, {
-      get : (target, prop) => {
+      get: (target, prop) => {
         if (prop in target) return target[prop]
         else return null;
       }
@@ -82,12 +82,10 @@ class Paxios  {
 
   cancel(): void {
     this.controller.abort();
-    this.initialConfig.signal = this.controller.signal
   }
 
   resume(): void {
     this.controller = new AbortController();
-    this.initialConfig.signal = this.controller.signal
   }
 
   private async apply(config: PaxiosConfig): Promise<void> {
@@ -99,15 +97,15 @@ class Paxios  {
       this.headers = new Headers(Object.assign(this.headers, config.headers));
     }
   }
-  
-  private setRequest(config: PaxiosConfig):PaxiosRequest {
+
+  private setRequest(config: PaxiosConfig): PaxiosRequest {
 
     const requestInit = Object.defineProperty(
-      Object.assign(this.initialConfig, config), 
-      'headers', { 
-        value: Object.assign(this.headers), 
-        writable : false 
-      }
+      Object.assign(this.initialConfig, config),
+      'headers', {
+      value: Object.assign(this.headers),
+      writable: false
+    }
     );
     const request = new Request(
       this.baseUrl + config.path,
@@ -118,18 +116,18 @@ class Paxios  {
 
   private async request(config: PaxiosConfig): Promise<PaxiosResponse> {
 
-      try{
-        await this.apply(config);
-        const resp = await fetch(this.setRequest(config));
-        return resp;
-      } catch (err) {
-        if (err instanceof Error)
-          throw new PaxiosError(err.message);
-      }
+    try {
+      await this.apply(config);
+      const resp = await fetch(this.setRequest(config));
+      return resp;
+    } catch (err) {
+      if (err instanceof Error)
+        throw new PaxiosError(err.message);
+    }
   }
 
   async get(path: string): Promise<PaxiosResponse> {
-    return this.request({method: 'GET', path });
+    return this.request({ method: 'GET', path });
   }
 
   async post(path: string, body: PaxiosConfig): Promise<PaxiosResponse> {
