@@ -1,5 +1,5 @@
 type PaxiosInterceptor = (callback: PaxiosCallback) => void;
-type PaxiosCallback = (config: PaxiosConfig) => PaxiosConfig;
+type PaxiosCallback = (config: PaxiosConfig) => Promise<PaxiosConfig>;
 
 interface PaxiosInterceptorInit {
   request: {
