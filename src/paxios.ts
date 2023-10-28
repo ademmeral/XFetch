@@ -76,7 +76,7 @@ class Paxios  {
     }
     return config;
   }
-
+ 
   private async request(config: PaxiosConfig): Promise<Response> {
       const newConfig = await this.apply(config);
       if (this.interceptors.request.size > 0 && !newConfig) 
