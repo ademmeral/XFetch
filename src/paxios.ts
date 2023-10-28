@@ -22,10 +22,12 @@ class Paxios  {
   constructor(config: PaxiosConfig) {
     this.baseUrl = config.baseUrl;
     this.controller = new AbortController();
-    this.initialConfig = Object.defineProperty(Object.create(config),
+    this.initialConfig = Object.defineProperty(
+      {},
       'signal', {
-      value: this.controller.signal
-    });
+        value: this.controller.signal
+      }
+    );
     this.headers = new Headers(config.headers);
     this.interceptors = {
       request: new Set(),
@@ -53,11 +55,28 @@ class Paxios  {
     };
   }
 
-  set config(param:Partial<PaxiosConfig>){
-    this.initialConfig = Object.assign(this.initialConfig, param)
+  set config(conf: PaxiosConfig | Partial<PaxiosConfig>) {
+    const pickProps = Object.keys(conf)
+      .reduce((a: Record<string, any>, c: string) => {
+        if (c !== 'headers') a[c] = conf[c]; return a;
+      }, {});
+
+    this.initialConfig = Object.assign(this.initialConfig, pickProps);
+
+    if ('headers' in conf)
+      for (const key in conf.headers) {
+        this.headers.append(key, conf.headers[key])
+      };
   }
 
-  get config(){ return this.initialConfig};
+  get config(){
+    return new Proxy(this.initialConfig, {
+      get : (target, prop) => {
+        if (prop in target) return target[prop]
+        else return null;
+      }
+    })
+  };
 
   static create = (config: PaxiosConfig): Paxios => new Paxios(config);
 
@@ -81,12 +100,8 @@ class Paxios  {
     }
   }
   
-  setRequest(config: PaxiosConfig):Request {
-    // if ('headers' in config) {
-    //   for (const key in config.headers){
-    //     headers.append(key, config.headers[key])
-    //   }
-    // }
+  private setRequest(config: PaxiosConfig):Request {
+
     const requestInit = Object.defineProperty(
       Object.assign(this.initialConfig, config), 
       'headers', { 
@@ -114,30 +129,30 @@ class Paxios  {
   }
 
   async get(path: string): Promise<PaxiosResponse> {
-    return this.request({ method: 'GET', path });
+    return this.request({method: 'GET', path });
   }
 
-  async post(path: string, conf: PaxiosConfig): Promise<PaxiosResponse> {
+  async post(path: string, body: PaxiosConfig): Promise<PaxiosResponse> {
     return this.request({
       method: 'POST',
       path,
-      body: { value: JSON.stringify(conf.body) }
+      body: JSON.stringify(body)
     });
   }
 
-  async put(path: string, conf: PaxiosConfig): Promise<PaxiosResponse> {
+  async put(path: string, body: PaxiosConfig): Promise<PaxiosResponse> {
     return this.request({
       method: 'PUT',
       path,
-      body: { value: JSON.stringify(conf.body) }
+      body: JSON.stringify(body)
     });
   }
 
-  async delete(path: string, conf: PaxiosConfig): Promise<PaxiosResponse> {
+  async delete(path: string, body: PaxiosConfig): Promise<PaxiosResponse> {
     return this.request({
       method: 'DELETE',
       path,
-      body: { value: JSON.stringify(conf.body) }
+      body: JSON.stringify(body)
     });
   }
 }
