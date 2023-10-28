@@ -16,11 +16,13 @@ class Paxios {
   public headers: Headers;
   public controller: AbortController;
   public baseUrl: string;
+  public url: URL;
   private interceptors: PaxiosInterceptors;
   interceptor: PaxiosInterceptorInit;
 
   constructor(config: PaxiosConfig) {
     this.baseUrl = config.baseUrl;
+    this.url = new URL(this.baseUrl);
     this.controller = new AbortController();
 
     this.initialConfig = Object.defineProperty(
@@ -60,14 +62,15 @@ class Paxios {
   set config(conf: PaxiosConfig | Partial<PaxiosConfig>) {
     const pickProps = Object.keys(conf)
       .reduce((a: Record<string, any>, c: string) => {
-        if (c !== 'headers') a[c] = conf[c]; return a;
+        if (c !== 'headers') a[c] = conf[c];
+        return a;
       }, {});
 
     this.initialConfig = Object.assign(this.initialConfig, pickProps);
 
     if ('headers' in conf)
       for (const key in conf.headers) {
-        this.headers.append(key, conf.headers[key])
+        this.headers.set(key, conf.headers[key])
       };
   }
 
@@ -105,18 +108,20 @@ class Paxios {
   }
 
   private setRequest(config: PaxiosConfig): PaxiosRequest {
-
-    const requestInit = Object.defineProperty(
-      Object.assign(this.initialConfig, config),
-      'headers', {
-      value: Object.assign(this.headers),
-      writable: false
+    this.url = new URL(`${this.baseUrl}${config.path}`);
+    const requestInit = Object.defineProperties(
+      Object.assign(this.initialConfig, config), {
+      headers: {
+        value: this.headers,
+        writable: false
+      },
+      url: {
+        value: this.url,
+        writable: true
+      }
     }
     );
-    const request = new Request(
-      this.baseUrl + config.path,
-      requestInit
-    )
+    const request = new Request(this.url.href, requestInit);
     return request;
   }
 

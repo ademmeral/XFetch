@@ -21,6 +21,7 @@ interface IPaxiosProps {
   public headers: Headers,
   public request?: Request,
   public baseUrl: string,
+  public url: URL,
   public controller: AbortController,
   private interceptors: PaxiosInterceptors,
   interceptor: PaxiosInterceptorInit,
