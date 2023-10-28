@@ -22,12 +22,14 @@ class Paxios {
   constructor(config: PaxiosConfig) {
     this.baseUrl = config.baseUrl;
     this.controller = new AbortController();
+
     this.initialConfig = Object.defineProperty(
       {},
       'signal', {
       value: this.controller.signal
     }
     );
+
     this.headers = new Headers(config.headers);
     this.interceptors = {
       request: new Set(),
@@ -78,7 +80,11 @@ class Paxios {
     })
   };
 
-  static create = (config: PaxiosConfig): Paxios => new Paxios(config);
+  static create = (config: PaxiosConfig): Paxios => {
+    const newInst = new Paxios(config);
+    newInst.config = config;
+    return newInst;
+  };
 
   cancel(): void {
     this.controller.abort();
