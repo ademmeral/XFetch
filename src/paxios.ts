@@ -100,12 +100,12 @@ class Paxios  {
     }
   }
   
-  private setRequest(config: PaxiosConfig):Request {
+  private setRequest(config: PaxiosConfig):PaxiosRequest {
 
     const requestInit = Object.defineProperty(
       Object.assign(this.initialConfig, config), 
       'headers', { 
-        value: Object.assign(this.headers, config.headers), 
+        value: Object.assign(this.headers), 
         writable : false 
       }
     );

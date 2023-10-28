@@ -14,6 +14,7 @@ interface PaxiosInterceptorInit {
 
 type PaxiosConfig = RequestInit<RequestInit<BodyInit>>;
 type PaxiosResponse = Response<ResponseInit>
+type PaxiosRequest = Request<RequestInit>
 
 interface IPaxiosProps {
   public initialConfig: PaxiosConfig;
