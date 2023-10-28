@@ -9,7 +9,8 @@ class PaxiosError extends Error {
     }
 }
 class Paxios {
-    config;
+    initialConfig;
+    headers;
     baseUrl;
     controller;
     interceptors;
@@ -17,10 +18,10 @@ class Paxios {
     constructor(config) {
         this.baseUrl = config.baseUrl;
         this.controller = new AbortController();
-        this.config = {
-            signal: this.controller.signal,
-            ...config,
-        };
+        this.initialConfig = Object.defineProperty(Object.create(config), 'signal', {
+            value: this.controller.signal
+        });
+        this.headers = new Headers(config.headers);
         this.interceptors = {
             request: new Set(),
             response: new Set(),
@@ -45,72 +46,75 @@ class Paxios {
             },
         };
     }
+    set config(param) {
+        this.initialConfig = Object.assign(this.initialConfig, param);
+    }
+    get config() { return this.initialConfig; }
+    ;
     static create = (config) => new Paxios(config);
     cancel() {
         this.controller.abort();
-        this.config = {
-            ...this.config,
-            signal: this.controller.signal,
-        };
+        this.initialConfig.signal = this.controller.signal;
     }
     resume() {
         this.controller = new AbortController();
-        this.config = {
-            ...this.config,
-            signal: this.controller.signal,
-        };
+        this.initialConfig.signal = this.controller.signal;
     }
     async apply(config) {
         for await (const fn of this.interceptors.request) {
             const newConfig = await fn(config);
             if (this.interceptors.request.size > 0 && !newConfig)
                 throw new PaxiosError('You must return config!');
-            this.config = {
-                ...this.config,
-                ...newConfig,
-                headers: { ...this.config.headers, ...newConfig.headers },
-            };
+            this.initialConfig = Object.assign(this.initialConfig, newConfig);
+            this.headers = new Headers(Object.assign(this.headers, config.headers));
         }
     }
-    async request(config) {
-        await this.apply(config);
-        const resp = await fetch(config.url, config);
-        if (!resp.ok)
-            throw new PaxiosError('An error has occured while fetching data.');
-        return resp;
-    }
-    async get(path, conf) {
-        return this.request({
-            ...this.config,
-            ...conf,
-            method: 'GET',
-            url: this.baseUrl + path,
+    setRequest(config) {
+        // if ('headers' in config) {
+        //   for (const key in config.headers){
+        //     headers.append(key, config.headers[key])
+        //   }
+        // }
+        const requestInit = Object.defineProperty(Object.assign(this.initialConfig, config), 'headers', {
+            value: Object.assign(this.headers, config.headers),
+            writable: false
         });
+        const request = new Request(this.baseUrl + config.path, requestInit);
+        return request;
+    }
+    async request(config) {
+        try {
+            await this.apply(config);
+            const resp = await fetch(this.setRequest(config));
+            return resp;
+        }
+        catch (err) {
+            if (err instanceof Error)
+                throw new PaxiosError(err.message);
+        }
+    }
+    async get(path) {
+        return this.request({ method: 'GET', path });
     }
     async post(path, conf) {
         return this.request({
-            ...this.config,
-            ...conf,
             method: 'POST',
-            url: this.baseUrl + path,
-            body: JSON.stringify(conf.body),
+            path,
+            body: { value: JSON.stringify(conf.body) }
         });
     }
     async put(path, conf) {
         return this.request({
-            ...this.config,
-            ...conf,
             method: 'PUT',
-            url: this.baseUrl + path,
-            body: JSON.stringify(conf.body),
+            path,
+            body: { value: JSON.stringify(conf.body) }
         });
     }
     async delete(path, conf) {
         return this.request({
-            ...this.config,
-            ...conf,
             method: 'DELETE',
-            url: this.baseUrl + path,
+            path,
+            body: { value: JSON.stringify(conf.body) }
         });
     }
 }
