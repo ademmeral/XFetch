@@ -11,17 +11,24 @@ class PaxiosError extends Error {
 class Paxios {
     initialConfig;
     headers;
+    request;
     controller;
-    baseUrl;
     url;
+    searchParams;
     interceptors;
     interceptor;
     constructor(config) {
-        this.baseUrl = config.baseUrl;
-        this.url = new URL(this.baseUrl);
+        this.url = new URL(decodeURIComponent(config.baseUrl));
+        this.searchParams = this.url.searchParams;
         this.controller = new AbortController();
-        this.initialConfig = Object.defineProperty({}, 'signal', { value: this.controller.signal });
         this.headers = new Headers(config.headers);
+        this.initialConfig = { signal: this.controller.signal };
+        this.request = {
+            ...this.initialConfig,
+            url: this.url,
+            searchParams: this.searchParams,
+            headers: this.headers
+        };
         this.interceptors = {
             request: new Set(),
             response: new Set(),
@@ -47,23 +54,55 @@ class Paxios {
         };
     }
     set config(conf) {
-        const pickProps = Object.keys(conf)
-            .reduce((a, c) => {
-            if (c !== 'headers')
-                a[c] = conf[c];
+        for (const key in conf) {
+            if (key === 'headers') {
+                for (const k in conf.headers)
+                    this.headers.set(k, conf[k]);
+            }
+            else if (key === 'url') {
+                for (const k in conf.url) {
+                    if (k === 'pathname')
+                        this.url = new URL(decodeURIComponent(conf.url.pathname), this.url.origin);
+                    else if (k === 'searchParams') {
+                        for (const k in conf.url.searchParams)
+                            this.url.searchParams[k] = conf.url.searchParams[k];
+                    }
+                    else
+                        this.url[k] = conf.url[k];
+                }
+                ;
+            }
+            else if (key === 'searchParams') {
+                for (const k in conf.searchParams)
+                    this.searchParams[k] = conf.searchParams[k];
+            }
             else
-                this.headers.set(c, conf.headers[c]);
-            return a;
-        }, {});
-        this.initialConfig = Object.assign(this.initialConfig, pickProps);
+                this.initialConfig = Object.assign(this.initialConfig, conf);
+        }
+        this.searchParams = this.url.searchParams;
+        this.request.headers = this.headers;
+        this.request.url = this.url;
+        this.request.searchParams = this.searchParams;
+        this.request = {
+            ...this.request,
+            ...this.initialConfig,
+            headers: this.headers,
+            url: this.url,
+            searchParams: this.searchParams
+        };
     }
     get config() {
-        return new Proxy(this.initialConfig, {
+        const proxy = Object.assign({}, this.request);
+        return new Proxy(proxy, {
             get: (target, prop) => {
-                if (prop in target)
-                    return target[prop];
+                if (prop === 'headers')
+                    return target.headers;
+                else if (prop === 'url')
+                    return target.url;
+                else if (prop === 'searchParams')
+                    return target.searchParams;
                 else
-                    return null;
+                    return target;
             }
         });
     }
@@ -83,59 +122,44 @@ class Paxios {
         for await (const fn of this.interceptors.request) {
             const newConfig = await fn();
             if (this.interceptors.request.size > 0 && !newConfig)
-                throw new PaxiosError('You must return config!');
-            this.initialConfig = Object.assign(this.initialConfig, newConfig);
-            for (const key in newConfig.headers)
-                this.headers.set(key, newConfig.headers[key]);
+                throw new PaxiosError('You must return a config object!');
+            this.config = newConfig;
         }
     }
-    setRequest(config) {
-        this.url = new URL(`${this.baseUrl}${config.path}`);
-        const requestInit = Object.defineProperties(Object.assign(this.initialConfig, config), {
-            headers: {
-                value: this.headers,
-                writable: true
-            },
-            url: {
-                value: this.url,
-                writable: true
-            }
-        });
-        const request = new Request(this.url.href, requestInit);
-        return request;
-    }
-    async request(config) {
+    async handleRequest(config) {
         try {
+            this.config = config;
+            const request = new Request(this.request.url.href, this.request);
             await this.apply();
-            const resp = await fetch(this.setRequest(config));
-            return resp;
+            const response = await fetch(request);
+            return response;
         }
         catch (err) {
             if (err instanceof Error)
                 throw new PaxiosError(err.message);
         }
     }
-    async get(path) {
-        return this.request({ method: 'GET', path });
+    async get(pathname) {
+        return this.handleRequest({ method: 'GET', url: { pathname } });
     }
-    async post(path, body) {
-        return this.request({
+    async post(pathname, body) {
+        return this.handleRequest({
             method: 'POST',
-            path,
+            url: { pathname },
             body: JSON.stringify(body)
         });
     }
-    async put(path, body) {
-        return this.request({
+    async put(pathname, body) {
+        return this.handleRequest({
             method: 'PUT',
-            path,
+            url: { pathname },
             body: JSON.stringify(body)
         });
     }
-    async delete(path, body) {
-        return this.request({
+    async delete(pathname, body) {
+        return this.handleRequest({
             method: 'DELETE',
-            path,
+            url: { pathname },
             body: JSON.stringify(body)
         });
     }

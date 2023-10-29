@@ -15,12 +15,14 @@ interface PaxiosInterceptorInit {
 type PaxiosConfig = RequestInit<RequestInit<BodyInit>>;
 type PaxiosResponse = Response<ResponseInit>
 type PaxiosRequest = Request<ResponseInit>
+type PaxiosHeaders = Headers
+type PaxiosURL = URL
+type PaxiosSearchParams = URLSearchParams
 
 interface IPaxiosProps {
   initialConfig: PaxiosConfig;
   headers: Headers,
-  request?: Request,
-  baseUrl: string,
+  request: Request,
   url: URL,
   controller: AbortController,
   interceptors: PaxiosInterceptors,
