@@ -11,16 +11,16 @@ class PaxiosError extends Error {
 class Paxios {
     initialConfig;
     headers;
-    baseUrl;
     controller;
+    baseUrl;
+    url;
     interceptors;
     interceptor;
     constructor(config) {
         this.baseUrl = config.baseUrl;
+        this.url = new URL(this.baseUrl);
         this.controller = new AbortController();
-        this.initialConfig = Object.defineProperty(Object.create(config), 'signal', {
-            value: this.controller.signal
-        });
+        this.initialConfig = Object.defineProperty({}, 'signal', { value: this.controller.signal });
         this.headers = new Headers(config.headers);
         this.interceptors = {
             request: new Set(),
@@ -46,45 +46,67 @@ class Paxios {
             },
         };
     }
-    set config(param) {
-        this.initialConfig = Object.assign(this.initialConfig, param);
+    set config(conf) {
+        const pickProps = Object.keys(conf)
+            .reduce((a, c) => {
+            if (c !== 'headers')
+                a[c] = conf[c];
+            else
+                this.headers.set(c, conf.headers[c]);
+            return a;
+        }, {});
+        this.initialConfig = Object.assign(this.initialConfig, pickProps);
     }
-    get config() { return this.initialConfig; }
+    get config() {
+        return new Proxy(this.initialConfig, {
+            get: (target, prop) => {
+                if (prop in target)
+                    return target[prop];
+                else
+                    return null;
+            }
+        });
+    }
     ;
-    static create = (config) => new Paxios(config);
+    static create = (config) => {
+        const newInst = new Paxios(config);
+        newInst.config = config;
+        return newInst;
+    };
     cancel() {
         this.controller.abort();
-        this.initialConfig.signal = this.controller.signal;
     }
     resume() {
         this.controller = new AbortController();
-        this.initialConfig.signal = this.controller.signal;
     }
-    async apply(config) {
+    async apply() {
         for await (const fn of this.interceptors.request) {
-            const newConfig = await fn(config);
+            const newConfig = await fn();
             if (this.interceptors.request.size > 0 && !newConfig)
                 throw new PaxiosError('You must return config!');
             this.initialConfig = Object.assign(this.initialConfig, newConfig);
-            this.headers = new Headers(Object.assign(this.headers, config.headers));
+            for (const key in newConfig.headers)
+                this.headers.set(key, newConfig.headers[key]);
         }
     }
     setRequest(config) {
-        // if ('headers' in config) {
-        //   for (const key in config.headers){
-        //     headers.append(key, config.headers[key])
-        //   }
-        // }
-        const requestInit = Object.defineProperty(Object.assign(this.initialConfig, config), 'headers', {
-            value: Object.assign(this.headers, config.headers),
-            writable: false
+        this.url = new URL(`${this.baseUrl}${config.path}`);
+        const requestInit = Object.defineProperties(Object.assign(this.initialConfig, config), {
+            headers: {
+                value: this.headers,
+                writable: true
+            },
+            url: {
+                value: this.url,
+                writable: true
+            }
         });
-        const request = new Request(this.baseUrl + config.path, requestInit);
+        const request = new Request(this.url.href, requestInit);
         return request;
     }
     async request(config) {
         try {
-            await this.apply(config);
+            await this.apply();
             const resp = await fetch(this.setRequest(config));
             return resp;
         }
@@ -96,25 +118,25 @@ class Paxios {
     async get(path) {
         return this.request({ method: 'GET', path });
     }
-    async post(path, conf) {
+    async post(path, body) {
         return this.request({
             method: 'POST',
             path,
-            body: { value: JSON.stringify(conf.body) }
+            body: JSON.stringify(body)
         });
     }
-    async put(path, conf) {
+    async put(path, body) {
         return this.request({
             method: 'PUT',
             path,
-            body: { value: JSON.stringify(conf.body) }
+            body: JSON.stringify(body)
         });
     }
-    async delete(path, conf) {
+    async delete(path, body) {
         return this.request({
             method: 'DELETE',
             path,
-            body: { value: JSON.stringify(conf.body) }
+            body: JSON.stringify(body)
         });
     }
 }

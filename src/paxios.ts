@@ -1,7 +1,7 @@
 // paxios.ts
 
 class PaxiosError extends Error {
-  public date: Date;
+  date: Date;
 
   constructor(message: string) {
     super(message);
@@ -12,12 +12,12 @@ class PaxiosError extends Error {
 }
 
 class Paxios {
-  public initialConfig: PaxiosConfig;
-  public headers: Headers;
-  public controller: AbortController;
-  public baseUrl: string;
-  public url: URL;
-  private interceptors: PaxiosInterceptors;
+  initialConfig: PaxiosConfig;
+  headers: Headers;
+  controller: AbortController;
+  baseUrl: string;
+  url: URL;
+  interceptors: PaxiosInterceptors;
   interceptor: PaxiosInterceptorInit;
 
   constructor(config: PaxiosConfig) {
@@ -27,9 +27,7 @@ class Paxios {
 
     this.initialConfig = Object.defineProperty(
       {},
-      'signal', {
-      value: this.controller.signal
-    }
+      'signal', { value: this.controller.signal }
     );
 
     this.headers = new Headers(config.headers);
@@ -62,16 +60,11 @@ class Paxios {
   set config(conf: PaxiosConfig | Partial<PaxiosConfig>) {
     const pickProps = Object.keys(conf)
       .reduce((a: Record<string, any>, c: string) => {
-        if (c !== 'headers') a[c] = conf[c];
+        if (c !== 'headers') a[c] = conf[c]
+        else this.headers.set(c, conf.headers[c]);
         return a;
       }, {});
-
     this.initialConfig = Object.assign(this.initialConfig, pickProps);
-
-    if ('headers' in conf)
-      for (const key in conf.headers) {
-        this.headers.set(key, conf.headers[key])
-      };
   }
 
   get config() {
@@ -97,13 +90,14 @@ class Paxios {
     this.controller = new AbortController();
   }
 
-  private async apply(config: PaxiosConfig): Promise<void> {
+  private async apply(): Promise<void> {
     for await (const fn of this.interceptors.request) {
-      const newConfig = await fn(config);
+      const newConfig = await fn();
       if (this.interceptors.request.size > 0 && !newConfig)
         throw new PaxiosError('You must return config!');
       this.initialConfig = Object.assign(this.initialConfig, newConfig);
-      this.headers = new Headers(Object.assign(this.headers, config.headers));
+      for (const key in newConfig.headers)
+        this.headers.set(key, newConfig.headers[key]);
     }
   }
 
@@ -113,7 +107,7 @@ class Paxios {
       Object.assign(this.initialConfig, config), {
       headers: {
         value: this.headers,
-        writable: false
+        writable: true
       },
       url: {
         value: this.url,
@@ -128,7 +122,7 @@ class Paxios {
   private async request(config: PaxiosConfig): Promise<PaxiosResponse> {
 
     try {
-      await this.apply(config);
+      await this.apply();
       const resp = await fetch(this.setRequest(config));
       return resp;
     } catch (err) {
