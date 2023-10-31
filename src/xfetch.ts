@@ -114,12 +114,16 @@ class XFetch {
   async handleRequest(config: XFetchConfig): Promise<XFetchResponse> {
 
     try {
+
       if (this.controller.signal.aborted)
         throw new Error('Request has been canceled!');
+      
       this.setConfig(config);
       const newRequest = Object.assign({}, this.config);
       newRequest.signal = this.controller.signal;
-      const request = new Request(this.url.href, newRequest);
+      const decodedHref = decodeURIComponent(this.url.href); 
+      const request = new Request(decodedHref, newRequest);
+      
       await this.apply();
       const response = await fetch(request);
       return response;
