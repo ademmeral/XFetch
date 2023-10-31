@@ -97,14 +97,13 @@ class XFetch {
     }
   };
 
-  typeController(firstItem:Object, secondItem:Object){
+  compareTypes(firstItem:Object, secondItem:Object, throws = true){
     const firstItemConst = firstItem.constructor.name;
     const secondItemConst = secondItem.constructor.name;
-    if (firstItemConst !== secondItemConst )
-      throw new XFetchError(
-        `You cannot assign ${secondItemConst} to ${firstItemConst}`
-      ) 
-    else return true;
+    if (firstItemConst !== secondItemConst ) {
+      if (throws) throw new XFetchError(`You cannot assign ${secondItemConst} to ${firstItemConst}`)
+      else false
+    } else return true;
   }
 
   private async apply(): Promise<void> {
