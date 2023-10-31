@@ -6,5 +6,5 @@
   3. After cloning the repo, <code>cd Downloaded_Repo</code> then <code>code .</code>
   4. You must have opened the repo in VsCode via Terminal.
 
-https://github.com/ademmeral/XFetch/assets/107725052/ceb867a9-82c4-4210-92d5-bb2dce5c8960
+https://github.com/ademmeral/XFetch/assets/107725052/eb8868a5-9207-4604-9289-5c3b50722827
 
