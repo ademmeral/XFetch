@@ -85,11 +85,15 @@ class XFetch {
         }
     }
     ;
-    typeController(firstItem, secondItem) {
+    compareTypes(firstItem, secondItem, throws = true) {
         const firstItemConst = firstItem.constructor.name;
         const secondItemConst = secondItem.constructor.name;
-        if (firstItemConst !== secondItemConst)
-            throw new XFetchError(`You cannot assign ${secondItemConst} to ${firstItemConst}`);
+        if (firstItemConst !== secondItemConst) {
+            if (throws)
+                throw new XFetchError(`You cannot assign ${secondItemConst} to ${firstItemConst}`);
+            else
+                false;
+        }
         else
             return true;
     }
@@ -139,5 +143,6 @@ class XFetch {
             body: JSON.stringify(body)
         });
     }
+    ;
 }
 export default XFetch;

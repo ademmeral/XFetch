@@ -158,7 +158,8 @@ class XFetch {
       url: { pathname },
       body: JSON.stringify(body)
     });
-  }
+  };
+
 }
 
 export default XFetch;
