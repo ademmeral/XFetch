@@ -17,6 +17,7 @@ body,
   display: grid;
   grid-template-rows: max-content 1fr;
   place-items: center;
+  gap: 3rem;
 }
 ul{
   display: flex;
@@ -29,15 +30,13 @@ ul{
   font-weight: 500;
 }
 .btns{
-  margin-top: 2rem;
-
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
 }
 .btns button{
-  width: 150px;
-  height: 70px;
-  font-size: 1.25rem;
+  min-width: 75px;
+  min-height: 25px;
   padding: 0.25rem;
   cursor: pointer;
 }

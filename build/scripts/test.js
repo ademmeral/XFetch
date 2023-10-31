@@ -1,6 +1,6 @@
-import Paxios from './api.js';
+import XFetch from './api.js';
 // DONT FORGET TO ADD .JS EXTENSION TO THE END OF THE JAVASCRIPT FILES IN BUILD/SCRIPTS DIRECTORY
-const intercept = async (conf) => {
+const intercept = async () => {
     /* try {
       
       const resp = await fetch('https://jsonplaceholder.typicode.com/users/3')
@@ -10,18 +10,12 @@ const intercept = async (conf) => {
       console.log(err);
   
     } */
-    console.log('Im an interceptor/middleware and setting new token');
-    return {
-        ...conf,
-        headers: {
-            'authorization': 'Bearer myVeryPrivateToken'
-        }
-    };
+    console.log('Im an XFetch interceptor before request x()');
 };
 const btns = [...document.querySelectorAll('button')];
 btns[0].addEventListener('click', async () => {
     try {
-        const resp = await Paxios.get('/todos/1');
+        const resp = await XFetch.get('/todos/1');
         const data = await resp?.json();
         console.log(data);
     }
@@ -30,8 +24,14 @@ btns[0].addEventListener('click', async () => {
     }
 });
 btns[1].addEventListener('click', () => {
-    Paxios.interceptor.request.eject(intercept);
+    XFetch.interceptors.request.eject(intercept);
 });
 btns[2].addEventListener('click', () => {
-    Paxios.interceptor.request.use(intercept);
+    XFetch.interceptors.request.use(intercept);
+});
+btns[3].addEventListener('click', () => {
+    XFetch.cancel();
+});
+btns[4].addEventListener('click', () => {
+    XFetch.resume();
 });

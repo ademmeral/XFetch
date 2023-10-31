@@ -1,14 +1,14 @@
-// paxios.ts
-class PaxiosError extends Error {
+// XFetch.ts
+class XFetchError extends Error {
     date;
     constructor(message) {
         super(message);
-        this.name = 'PaxiosError';
+        this.name = 'XFetchError';
         this.message = message;
         this.date = new Date();
     }
 }
-class Paxios {
+class XFetch {
     config;
     headers;
     controller;
@@ -19,7 +19,7 @@ class Paxios {
         this.config = config;
         this.url = new URL(decodeURIComponent(config.baseUrl));
         this.controller = new AbortController();
-        this.headers = new Headers(config.headers);
+        this.headers = new Headers(Object.defineProperty(Object.assign({}, config.headers), 'x-requested-with', { value: 'XFetch' }));
         this.middlewares = {
             request: new Set(),
             response: new Set(),
@@ -44,7 +44,7 @@ class Paxios {
         };
     }
     static create = (config) => {
-        const newInst = new Paxios(config);
+        const newInst = new XFetch(config);
         newInst.setConfig(config);
         return newInst;
     };
@@ -65,7 +65,7 @@ class Paxios {
     setUrl(config) {
         for (const key in config)
             if (!(key in this.url))
-                throw new PaxiosError(`${key} cannot be assigned to URL Object!`);
+                throw new XFetchError(`${key} cannot be assigned to URL Object!`);
             else if (key === 'searchParams')
                 for (const k in config[key])
                     this.url.searchParams.set(k, config[key][k]);
@@ -73,7 +73,7 @@ class Paxios {
                 this.url[key] = config[key];
     }
     setConfig(config) {
-        const excludedKeys = ['headers', 'url', 'baseUrl'];
+        const excludedKeys = ['headers', 'url', 'baseUrl', 'searchParams'];
         if ('headers' in config)
             this.setHeaders(config.headers);
         if ('url' in config)
@@ -89,7 +89,7 @@ class Paxios {
         const firstItemConst = firstItem.constructor.name;
         const secondItemConst = secondItem.constructor.name;
         if (firstItemConst !== secondItemConst)
-            throw new PaxiosError(`You cannot assign ${secondItemConst} to ${firstItemConst}`);
+            throw new XFetchError(`You cannot assign ${secondItemConst} to ${firstItemConst}`);
         else
             return true;
     }
@@ -111,7 +111,7 @@ class Paxios {
         }
         catch (err) {
             if (err instanceof Error)
-                throw new PaxiosError(err.message);
+                throw new XFetchError(err.message);
         }
     }
     async get(pathname) {
@@ -139,4 +139,4 @@ class Paxios {
         });
     }
 }
-export default Paxios;
+export default XFetch;
