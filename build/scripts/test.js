@@ -8,6 +8,7 @@ const intercept = async () => {
       console.log('I am an interceptor. Here is you Data', data);
     } catch (err) {
       console.log(err);
+  
     } */
     console.log('Im an XFetch interceptor before request x()');
 };
@@ -33,4 +34,9 @@ btns[3].addEventListener('click', () => {
 });
 btns[4].addEventListener('click', () => {
     XFetch.resume();
+});
+btns[5].addEventListener('click', () => {
+    XFetch.getAll(['/posts/1', '/users/2', '/comments/3'])
+        .then(console.log)
+        .catch(console.error);
 });

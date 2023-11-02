@@ -2,13 +2,12 @@ import XFetch from './api';
 // DONT FORGET TO ADD .JS EXTENSION TO THE END OF THE JAVASCRIPT FILES IN BUILD/SCRIPTS DIRECTORY
 const intercept = async () => {
   /* try {
-    
+    // (!) DO NOT USE THE SAME INSTANCE IN AN INTERCEPTOR INSTEAD USE FETCH OR CREATE NEW ONE
     const resp = await fetch('https://jsonplaceholder.typicode.com/users/3')
     const data = await resp.json()
     console.log('I am an interceptor. Here is you Data', data);
   } catch (err) {
     console.log(err);
-
   } */
   console.log('Im an XFetch interceptor before request x()')
 };
@@ -34,4 +33,9 @@ btns[3].addEventListener('click', () => {
 });
 btns[4].addEventListener('click', () => {
   XFetch.resume();
+});
+btns[5].addEventListener('click', () => {
+  XFetch.getAll(['/posts/1', '/users/2', '/comments/3'])
+    .then(console.log)
+    .catch(console.error)
 });

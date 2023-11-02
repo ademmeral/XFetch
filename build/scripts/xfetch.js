@@ -144,5 +144,18 @@ class XFetch {
         });
     }
     ;
+    async getAll(pathnames) {
+        const fetchData = async (path) => {
+            try {
+                return await (await fetch(decodeURIComponent(this.url.origin + path))).json();
+            }
+            catch (err) {
+                if (err instanceof Error)
+                    throw new XFetchError(err.message);
+            }
+        };
+        return await Promise.all(pathnames.map(pn => fetchData.bind(this)(pn)));
+        // no one/nothing can exist at two or more place at the same time, dont they? (Function.bind)
+    }
 }
 export default XFetch;
