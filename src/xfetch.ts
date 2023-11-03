@@ -170,7 +170,7 @@ class XFetch {
       }
     }
       return await Promise.all(pathnames.map(pn => fetchData.bind(this)(pn))) 
-      // no one/nothing can exist at two or more place at the same time, dont they? (Function.bind)
+      // no one/nothing can exist at two or more place at the same time, can they? (Function.bind)
   }
 }
 
