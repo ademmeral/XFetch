@@ -1,4 +1,4 @@
-import XFetch from './api.js';
+import XFetch from './api';
 // DONT FORGET TO ADD .JS EXTENSION TO THE END OF THE JAVASCRIPT FILES IN BUILD/SCRIPTS DIRECTORY
 const intercept = async () => {
     /* try {
@@ -8,7 +8,6 @@ const intercept = async () => {
       console.log('I am an interceptor. Here is you Data', data);
     } catch (err) {
       console.log(err);
-  
     } */
     console.log('Im an XFetch interceptor before request x()');
 };
