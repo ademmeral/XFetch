@@ -1,4 +1,4 @@
-import XFetch from "./xfetch";
+import XFetch from "./xfetch.js";
 const xfetchInstance = XFetch.create({
     credentials: 'include',
     baseUrl: 'https://jsonplaceholder.typicode.com',
