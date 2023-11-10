@@ -160,7 +160,7 @@ class XFetch {
     });
   };
 
-  async getAll(pathnames:string[]) {
+  async getAll(pathnames:string[]):Promise<XFetchResponse> {
     const fetchData = async (path:string) => {
       try {
         return await (await fetch(decodeURIComponent(this.url.origin + path))).json()
@@ -173,7 +173,45 @@ class XFetch {
         pathnames.map( pn => fetchData.bind(this)(pn) )
       ); 
       // no one/nothing can exist at two or more place at the same time, can they? (Function.bind)
-  }
+  };
+
+  clone(obj : Record<string, any>){
+    const clonedObj:Record<string, any> = {};
+    for (const k in obj) clonedObj[k] = obj[k];
+    return clonedObj;
+  };
+
+  async getFileWithProgress(pathname:string, onProgress : OnProgress):XFetchFileResponse{
+
+    try{ // It is pretty easy with XMLHttpReques because it has a progress event coming from ProgressEvent
+      const newUrl = decodeURIComponent(new URL(pathname, this.url.origin).href);
+      const { headers } = await fetch(newUrl, { method: 'HEAD' }) as XFetchResponse;
+      const type = headers.get('Content-Type');
+      const total = +headers.get('Content-Length');
+      
+      const resp = await fetch('http://localhost:3000') as XFetchResponse;
+      const reader = resp.body.getReader();
+      let result = []
+      let loaded = 0;
+
+      while (true){
+        const { done, value } = await reader.read();
+        if (done) break;
+        loaded += value.length;
+        result.push(value);
+        onProgress({total, loaded})
+      }
+
+      const blob = new Blob(result, { type });
+      const url = new URL(URL.createObjectURL(blob));
+      return [new Response(blob), url];
+
+    } catch (err){
+      if (err instanceof Error)
+        throw new XFetchError(err.message);
+    }
+  };
+
 }
 
 export default XFetch;
