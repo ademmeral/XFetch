@@ -189,7 +189,7 @@ class XFetch {
       const type = headers.get('Content-Type');
       const total = +headers.get('Content-Length');
       
-      const resp = await fetch('http://localhost:3000') as XFetchResponse;
+      const resp = await fetch(newUrl) as XFetchResponse;
       const reader = resp.body.getReader();
       let result = []
       let loaded = 0;
