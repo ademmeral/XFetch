@@ -46,4 +46,4 @@ interface XFetchMiddlewares {
   response: Set<XFetchCallback>;
 }
 type XFetchFileResponse = Promise<[XFetchResponse, URL]|undefined>;
-type OnProgress = (obj:Record<string, number>) => void|any
+type XFetchFileOnProgress = (obj:Record<string, any>) => void|any

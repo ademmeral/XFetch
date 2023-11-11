@@ -181,28 +181,28 @@ class XFetch {
     return clonedObj;
   };
 
-  async getFileWithProgress(pathname:string, onProgress : OnProgress):XFetchFileResponse{
+  async getFileWithProgress(pathname:string, onProgress?: XFetchFileOnProgress):XFetchFileResponse{
 
     try{ // It is pretty easy with XMLHttpReques because it has a progress event coming from ProgressEvent
       const newUrl = decodeURIComponent(new URL(pathname, this.url.origin).href);
       const { headers } = await fetch(newUrl, { method: 'HEAD' }) as XFetchResponse;
       const type = headers.get('Content-Type');
-      const total = +headers.get('Content-Length');
+      const totalLength = +headers.get('Content-Length');
       
       const resp = await fetch(newUrl) as XFetchResponse;
       const reader = resp.body.getReader();
-      let result = []
-      let loaded = 0;
+      const loaded:Uint8Array[] = []
+      let loadedLength = 0;
 
       while (true){
         const { done, value } = await reader.read();
         if (done) break;
-        loaded += value.length;
-        result.push(value);
-        onProgress({total, loaded})
+        loadedLength += value.length;
+        loaded.push(value);
+        if ( onProgress ) onProgress({loaded, loadedLength, totalLength});
       }
 
-      const blob = new Blob(result, { type });
+      const blob = new Blob(loaded, { type });
       const url = new URL(URL.createObjectURL(blob));
       return [new Response(blob), url];
 
