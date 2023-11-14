@@ -119,6 +119,8 @@ class XFetch {
       
       this.setConfig(config);
       const newRequest = Object.assign({}, this.config);
+      if ( ['HEAD', 'GET'].includes( config.method.toUpperCase() ) )
+        delete config.body;
       newRequest.signal = this.controller.signal;
       const decodedHref = decodeURIComponent(this.url.href); 
       const request = new Request(decodedHref, newRequest);

@@ -107,6 +107,8 @@ class XFetch {
                 throw new Error('Request has been canceled!');
             this.setConfig(config);
             const newRequest = Object.assign({}, this.config);
+            if (['HEAD', 'GET'].includes(config.method.toUpperCase()))
+                delete config.body;
             newRequest.signal = this.controller.signal;
             const decodedHref = decodeURIComponent(this.url.href);
             const request = new Request(decodedHref, newRequest);
@@ -170,20 +172,21 @@ class XFetch {
             const newUrl = decodeURIComponent(new URL(pathname, this.url.origin).href);
             const { headers } = await fetch(newUrl, { method: 'HEAD' });
             const type = headers.get('Content-Type');
-            const total = +headers.get('Content-Length');
-            const resp = await fetch('http://localhost:3000');
+            const totalLength = +headers.get('Content-Length');
+            const resp = await fetch(newUrl);
             const reader = resp.body.getReader();
-            let result = [];
-            let loaded = 0;
+            const loaded = [];
+            let loadedLength = 0;
             while (true) {
                 const { done, value } = await reader.read();
                 if (done)
                     break;
-                loaded += value.length;
-                result.push(value);
-                onProgress({ total, loaded });
+                loadedLength += value.length;
+                loaded.push(value);
+                if (onProgress)
+                    onProgress({ loaded, loadedLength, totalLength });
             }
-            const blob = new Blob(result, { type });
+            const blob = new Blob(loaded, { type });
             const url = new URL(URL.createObjectURL(blob));
             return [new Response(blob), url];
         }
