@@ -39,3 +39,12 @@ btns[5].addEventListener('click', () => {
     .then(console.log)
     .catch(console.error)
 });
+
+/* ========== PROGRESS =============== */
+const handleProgress = ({chunks, chunksLength, totalLength}:XFetchFileProgressInfo) => {
+  const calcInPerc = (chunksLength / totalLength) * 100;
+  console.log(`${calcInPerc}% completed...`); // !! Jsonplaceholder doesnt give info about content-length
+};
+btns[6].addEventListener('click', () => {
+  XFetch.getFileWithProgress('/comments', handleProgress)
+});

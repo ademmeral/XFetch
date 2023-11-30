@@ -6,7 +6,7 @@ const xfetchInstance = XFetch.create({
   headers : {
     'content-type' : 'application/json',
     accept : 'application/json',
-    authorization : 'Bearer anExampleToken'
+    // authorization : 'Bearer anExampleToken'
   }
 });
 

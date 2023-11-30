@@ -135,32 +135,36 @@ class XFetch {
     }
   }
   async get(pathname: string): Promise<XFetchResponse> {
-    return this.handleRequest({ method: 'GET', url: { pathname } });
+    return this.handleRequest.bind(this, ({ method: 'GET', url: { pathname } }))();
   }
 
   async post(pathname: string, body: XFetchConfig): Promise<XFetchResponse> {
-    return this.handleRequest({
+    return this.handleRequest.bind(this, ({
       method: 'POST',
       url: { pathname },
       body: JSON.stringify(body)
-    });
+    }))();
   }
 
   async put(pathname: string, body: XFetchConfig): Promise<XFetchResponse> {
-    return this.handleRequest({
+    return this.handleRequest.bind(this,({
       method: 'PUT',
       url: { pathname },
       body: JSON.stringify(body)
-    });
+    }))();
   }
 
   async delete(pathname: string, body: XFetchConfig): Promise<XFetchResponse> {
-    return this.handleRequest({
+    return this.handleRequest.bind(this,({
       method: 'DELETE',
       url: { pathname },
       body: JSON.stringify(body)
-    });
+    }))();
   };
+
+  async head(pathname: string){
+    return this.handleRequest.bind(this, { method: 'HEAD', url: { pathname } })();
+  }
 
   async getAll(pathnames:string[]):Promise<XFetchResponse> {
     const fetchData = async (path:string) => {
@@ -174,7 +178,6 @@ class XFetch {
       return await Promise.all(
         pathnames.map( pn => fetchData.bind(this)(pn) )
       ); 
-      // no one/nothing can exist at two or more place at the same time, can they? (Function.bind)
   };
 
   clone(obj : Record<string, any>){
@@ -186,27 +189,29 @@ class XFetch {
   async getFileWithProgress(pathname:string, onProgress?: XFetchFileOnProgress):XFetchFileResponse{
 
     try{ // It is pretty easy with XMLHttpReques because it has a progress event coming from ProgressEvent
-      const newUrl = decodeURIComponent(new URL(pathname, this.url.origin).href);
-      const { headers } = await fetch(newUrl, { method: 'HEAD' }) as XFetchResponse;
+      const { headers } = await this.head(pathname);
       const type = headers.get('Content-Type');
-      const totalLength = +headers.get('Content-Length');
+
+      const info:XFetchFileProgressInfo = {
+        totalLength : +headers.get('Content-Length'),
+        chunks : [],
+        chunksLength : 0
+      }
       
-      const resp = await fetch(newUrl) as XFetchResponse;
+      const resp = await this.get(pathname);
       const reader = resp.body.getReader();
-      const loaded:Uint8Array[] = []
-      let loadedLength = 0;
 
       while (true){
         const { done, value } = await reader.read();
         if (done) break;
-        loadedLength += value.length;
-        loaded.push(value);
-        if ( onProgress ) onProgress({loaded, loadedLength, totalLength});
+        info.chunksLength += value.length;
+        info.chunks.push(value);
+        if ( !!onProgress ) onProgress(info);
       }
 
-      const blob = new Blob(loaded, { type });
+      const blob = new Blob(info.chunks, { type });
       const url = new URL(URL.createObjectURL(blob));
-      return [new Response(blob), url];
+      return [resp, blob, url];
 
     } catch (err){
       if (err instanceof Error)
