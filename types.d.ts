@@ -50,5 +50,5 @@ type XFetchFileOnProgress = (info:XFetchFileProgressInfo) => void|any;
 type XFetchFileProgressInfo = {
   chunks : Uint8Array[],
   chunksLength : number,
-  totalLength : number
-}
+  totalLength : number,
+} & Partial<ReadableStreamReader>

@@ -66,16 +66,17 @@ class XFetch {
 
   resume(): void {
     this.controller = new AbortController();
-  }
+  };
 
   setHeaders(config: XFetchConfig){
     for (const key in config)
       this.headers.set(key, config[key]);
-  }
+  };
   appendToHeaders(config: XFetchConfig){
     for (const key in config)
       this.headers.append(key, config[key]);
-  }
+  };
+
   setUrl(config:XFetchConfig){
     for (const key in config)
       if (!(key in this.url)) 
@@ -84,7 +85,7 @@ class XFetch {
         for (const k in config[key])
         this.url.searchParams.set(k, config[key][k])
       else (this.url as any)[key] = config[key];
-  }
+  };
   setConfig(config: XFetchConfig){
     const excludedKeys = ['headers', 'url', 'baseUrl', 'searchParams']
     if ('headers' in config)
@@ -104,7 +105,13 @@ class XFetch {
       if (throws) throw new XFetchError(`You cannot assign ${secondItemConst} to ${firstItemConst}`)
       else false
     } else return true;
-  }
+  };
+
+  clone(obj : Record<string, any>){
+    const clonedObj:Record<string, any> = {};
+    for (const k in obj) clonedObj[k] = obj[k];
+    return clonedObj;
+  };
 
   private async apply(): Promise<void> {
     for await (const fn of this.middlewares.request) await fn();
@@ -135,55 +142,41 @@ class XFetch {
     }
   }
   async get(pathname: string): Promise<XFetchResponse> {
-    return this.handleRequest.bind(this, ({ method: 'GET', url: { pathname } }))();
+    return this.handleRequest.bind(this)({ method: 'GET', url: { pathname } });
   }
 
   async post(pathname: string, body: XFetchConfig): Promise<XFetchResponse> {
-    return this.handleRequest.bind(this, ({
+    return this.handleRequest.bind(this)({
       method: 'POST',
       url: { pathname },
       body: JSON.stringify(body)
-    }))();
+    })
   }
 
   async put(pathname: string, body: XFetchConfig): Promise<XFetchResponse> {
-    return this.handleRequest.bind(this,({
+    return this.handleRequest.bind(this)({
       method: 'PUT',
       url: { pathname },
       body: JSON.stringify(body)
-    }))();
+    });
   }
 
   async delete(pathname: string, body: XFetchConfig): Promise<XFetchResponse> {
-    return this.handleRequest.bind(this,({
+    return this.handleRequest.bind(this)({
       method: 'DELETE',
       url: { pathname },
       body: JSON.stringify(body)
-    }))();
+    });
   };
 
   async head(pathname: string){
-    return this.handleRequest.bind(this, { method: 'HEAD', url: { pathname } })();
+    return this.handleRequest.bind(this)({ method: 'HEAD', url: { pathname } })
   }
 
   async getAll(pathnames:string[]):Promise<XFetchResponse> {
-    const fetchData = async (path:string) => {
-      try {
-        return await (await fetch(decodeURIComponent(this.url.origin + path))).json()
-      } catch (err) {
-        if (err instanceof Error)
-          throw new XFetchError(err.message);
-      }
-    }
-      return await Promise.all(
-        pathnames.map( pn => fetchData.bind(this)(pn) )
-      ); 
-  };
-
-  clone(obj : Record<string, any>){
-    const clonedObj:Record<string, any> = {};
-    for (const k in obj) clonedObj[k] = obj[k];
-    return clonedObj;
+    return await Promise.all(
+      pathnames.map( async (pn) => await (await this.get(pn)).json() )
+    );
   };
 
   async getFileWithProgress(pathname:string, onProgress?: XFetchFileOnProgress):XFetchFileResponse{
@@ -191,16 +184,18 @@ class XFetch {
     try{ // It is pretty easy with XMLHttpReques because it has a progress event coming from ProgressEvent
       const { headers } = await this.head(pathname);
       const type = headers.get('Content-Type');
-
-      const info:XFetchFileProgressInfo = {
-        totalLength : +headers.get('Content-Length'),
-        chunks : [],
-        chunksLength : 0
-      }
       
       const resp = await this.get(pathname);
       const reader = resp.body.getReader();
 
+      const info:XFetchFileProgressInfo = {
+        totalLength : +headers.get('Content-Length'),
+        chunks : [],
+        chunksLength : 0,
+        cancel: reader.cancel,
+        closed : reader.closed
+      }
+      
       while (true){
         const { done, value } = await reader.read();
         if (done) break;

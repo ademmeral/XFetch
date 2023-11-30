@@ -34,10 +34,13 @@ btns[3].addEventListener('click', () => {
 btns[4].addEventListener('click', () => {
     XFetch.resume();
 });
-btns[5].addEventListener('click', () => {
-    XFetch.getAll(['/posts/1', '/users/2', '/comments/3'])
-        .then(console.log)
-        .catch(console.error);
+btns[5].addEventListener('click', async () => {
+    const result = await XFetch.getAll(['/posts/1', '/users/2', '/comments/3']);
+    // const result = await resp.json();
+    console.log(result);
+    // .then(result => result.json())
+    // .then(console.log)
+    // .catch(console.error)
 });
 /* ========== PROGRESS =============== */
 const handleProgress = ({ chunks, chunksLength, totalLength }) => {
