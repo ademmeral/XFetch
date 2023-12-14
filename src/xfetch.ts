@@ -72,7 +72,7 @@ class XFetch {
     for (const key in config)
       this.headers.set(key, config[key]);
   };
-  appendToHeaders(config: XFetchConfig){
+  appendHeaders(config: XFetchConfig){
     for (const key in config)
       this.headers.append(key, config[key]);
   };
@@ -182,14 +182,13 @@ class XFetch {
   async getFileWithProgress(pathname:string, onProgress?: XFetchFileOnProgress):XFetchFileResponse{
 
     try{ // It is pretty easy with XMLHttpReques because it has a progress event coming from ProgressEvent
-      const { headers } = await this.head(pathname);
-      const type = headers.get('Content-Type');
       
       const resp = await this.get(pathname);
+      const type = resp.headers.get('Content-Type');
       const reader = resp.body.getReader();
 
       const info:XFetchFileProgressInfo = {
-        totalLength : +headers.get('Content-Length'),
+        totalLength : +resp.headers.get('Content-Length'),
         chunks : [],
         chunksLength : 0,
         cancel: reader.cancel,
